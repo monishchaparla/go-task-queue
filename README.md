@@ -1,5 +1,7 @@
 Status: Planned — implementation not started yet.
 
+Plan page: https://go-task-queue.vercel.app
+
 # go-task-queue
 
 A distributed background-job queue in Go. This repository currently holds the **plan only**: scope, design, milestones, and how success will be measured. No queue code exists yet. Everything below describes what will be built, not what has been built.
