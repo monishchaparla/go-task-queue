@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>go-task-queue — Planned</title>
+<meta name="description" content="Plan for a distributed background-job queue in Go: leases with visibility timeouts, at-least-once delivery, retries, dead-letter queue, chaos tests. Planned, not yet implemented.">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1c1d1f;
+    --muted: #5a5e66;
+    --line: #d9d9d2;
+    --card: #ffffff;
+    --accent: #1d4ed8;
+    --badge-bg: #fff3c4;
+    --badge-fg: #5c4400;
+    --badge-line: #d9b43a;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121315;
+      --fg: #ececea;
+      --muted: #a2a6ad;
+      --line: #2e3035;
+      --card: #1a1b1e;
+      --accent: #8ab4ff;
+      --badge-bg: #3a2f08;
+      --badge-fg: #ffe28a;
+      --badge-line: #7a6217;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:focus-visible, .skip:focus-visible, .table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .skip { position: absolute; left: -999px; top: 0; background: var(--card); color: var(--fg); padding: .5rem 1rem; }
+  .skip:focus { left: 1rem; top: 1rem; z-index: 10; }
+  .wrap { max-width: 52rem; margin: 0 auto; padding: 0 1rem; }
+  header { padding: 3rem 0 1.5rem; border-bottom: 1px solid var(--line); }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.15; margin: .5rem 0 1rem; letter-spacing: -.02em; }
+  h2 { font-size: 1.35rem; margin: 0 0 .75rem; }
+  h3 { font-size: 1.05rem; margin: 0 0 .25rem; }
+  p { margin: 0 0 1rem; }
+  .badge {
+    display: inline-block; font: 600 .8rem/1 var(--mono); text-transform: uppercase; letter-spacing: .08em;
+    background: var(--badge-bg); color: var(--badge-fg); border: 1px solid var(--badge-line);
+    padding: .4rem .65rem; border-radius: 999px;
+  }
+  .lede { font-size: 1.15rem; color: var(--muted); max-width: 40rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+  .btn {
+    display: inline-block; padding: .65rem 1rem; border-radius: .5rem; border: 1px solid var(--accent);
+    color: var(--accent); text-decoration: none; font-weight: 600;
+  }
+  .btn.primary { background: var(--accent); color: var(--bg); }
+  main section { padding: 2rem 0; border-bottom: 1px solid var(--line); }
+  main section:last-child { border-bottom: 0; }
+  .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: .6rem; padding: 1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+  ol.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+  ol.flow li { background: var(--card); border: 1px solid var(--line); border-radius: .6rem; padding: .7rem 1rem; margin: 0; }
+  code { font-family: var(--mono); font-size: .9em; }
+  .table-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: .95rem; }
+  caption { text-align: left; color: var(--muted); padding-bottom: .5rem; }
+  th, td { text-align: left; vertical-align: top; padding: .55rem .6rem; border-bottom: 1px solid var(--line); }
+  th { font-weight: 600; }
+  ul, ol { padding-left: 1.2rem; margin: 0; }
+  li { margin-bottom: .4rem; }
+  .after { margin-top: 1rem; }
+  footer { padding: 2rem 0 3rem; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header>
+  <div class="wrap">
+    <span class="badge">Planned</span>
+    <h1>go-task-queue</h1>
+    <p class="lede">A distributed background-job queue in Go, designed so that killing a worker mid-job never loses the job, and proven with chaos tests.</p>
+    <p><strong>Status: Planned — implementation not started yet.</strong> This page describes the plan. Nothing here has been built, and no performance numbers exist.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/monishchaparla/go-task-queue">View plan repository</a>
+      <a class="btn" href="https://github.com/monishchaparla/go-task-queue/blob/main/PLAN.md">Week-by-week checklist</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+
+  <section aria-labelledby="problem">
+    <h2 id="problem">The problem</h2>
+    <p>Slow or failure-prone work (emails, webhooks, reports) belongs outside the request path. A background queue has to say what happens when a worker crashes halfway, when a producer retries an enqueue, or when a job fails every time. The plan is a small, readable queue that answers these correctly and checks the answers by killing processes.</p>
+  </section>
+
+  <section aria-labelledby="features">
+    <h2 id="features">What it will do</h2>
+    <div class="grid">
+      <div class="card"><h3>gRPC and HTTP enqueue</h3><p>Producers submit jobs over gRPC, with a small HTTP/JSON surface for convenience.</p></div>
+      <div class="card"><h3>Leases with visibility timeouts</h3><p>Workers lease jobs and can extend the lease by heartbeat. Stale workers are fenced out by a lease token.</p></div>
+      <div class="card"><h3>At-least-once delivery</h3><p>Accepted jobs run at least once or end in the dead-letter queue. Idempotency keys dedupe enqueues.</p></div>
+      <div class="card"><h3>Retries and DLQ</h3><p>Exponential backoff with jitter, then a dead-letter queue with replay.</p></div>
+      <div class="card"><h3>Scheduled jobs</h3><p>Delay a job until a given time.</p></div>
+      <div class="card"><h3>Metrics and dashboard</h3><p>Prometheus metrics and a small built-in dashboard.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="arch">
+    <h2 id="arch">Architecture (planned)</h2>
+    <p>Workers talk only to a stateless queue server. The server owns every state change in the database, so delivery rules live in one place.</p>
+    <ol class="flow" aria-label="Request flow">
+      <li><strong>Producers</strong> call <code>Enqueue</code> over gRPC or HTTP.</li>
+      <li><strong>Queue server</strong> (any number of replicas) validates and writes to storage; a reaper loop requeues expired leases.</li>
+      <li><strong>PostgreSQL</strong> holds the jobs table; jobs are claimed with <code>FOR UPDATE SKIP LOCKED</code>.</li>
+      <li><strong>Workers</strong> call <code>Lease</code>, <code>Heartbeat</code>, <code>Ack</code>, <code>Nack</code> on the server.</li>
+      <li><strong>Prometheus</strong> scrapes the server; the dashboard reads the same stats.</li>
+    </ol>
+    <p class="after">Job states: <code>ready</code> → <code>leased</code> → <code>done</code>, or back to <code>ready</code> with backoff, or to <code>dead</code> after the last allowed attempt. The full Mermaid diagrams are in the <a href="https://github.com/monishchaparla/go-task-queue#architecture">README</a>.</p>
+  </section>
+
+  <section aria-labelledby="storage">
+    <h2 id="storage">Storage: decision for v1</h2>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Storage comparison table">
+    <table>
+      <caption>Postgres with SKIP LOCKED versus a custom append-only log</caption>
+      <thead><tr><th scope="col">Concern</th><th scope="col">Postgres</th><th scope="col">Custom log</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Durability</th><td>Mature WAL and replication</td><td>Must build and verify recovery</td></tr>
+        <tr><th scope="row">Competing consumers</th><td><code>SKIP LOCKED</code> built in</td><td>Must build the index</td></tr>
+        <tr><th scope="row">Queries / DLQ inspection</th><td>Plain SQL</td><td>Custom tooling</td></tr>
+        <tr><th scope="row">Write cost</th><td>Row churn, vacuum tuning</td><td>Cheap appends, compaction needed</td></tr>
+        <tr><th scope="row">Throughput</th><td>To be measured</td><td>To be measured</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="after"><strong>Chosen for v1: Postgres.</strong> The goal is reliability, so effort goes to delivery semantics and tests. A log-backed store is a stretch goal, to be compared with measurements behind the same interface.</p>
+  </section>
+
+  <section aria-labelledby="guarantees">
+    <h2 id="guarantees">Guarantees and chaos tests</h2>
+    <ul>
+      <li>At-least-once, not exactly-once: a job may run twice, so handlers must be idempotent.</li>
+      <li>Planned chaos tests kill workers mid-job, stop the server, and restart the database under load.</li>
+      <li>They will assert that every acknowledged job ends as <code>done</code> or <code>dead</code>, that none are lost, and that duplicates are counted rather than hidden.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="bench">
+    <h2 id="bench">Benchmark plan</h2>
+    <p>To be measured after correctness is established: enqueue and end-to-end throughput (jobs/sec), end-to-end latency p50 and p99, and recovery time after a worker kill. Open-loop load for latency, repeated runs, and hardware recorded with every result. No results exist yet.</p>
+  </section>
+
+  <section aria-labelledby="stack">
+    <h2 id="stack">Tech stack</h2>
+    <p>Go, gRPC and protobuf, PostgreSQL (<code>pgx</code>), Prometheus, Docker Compose, GitHub Actions.</p>
+  </section>
+
+  <section aria-labelledby="milestones">
+    <h2 id="milestones">Milestones</h2>
+    <ol>
+      <li>Foundations: repo, CI, Compose, schema.</li>
+      <li>Core queue: enqueue, lease, ack, nack.</li>
+      <li>Network API and worker SDK.</li>
+      <li>Reliability: timeouts, heartbeat, reaper, backoff, DLQ, idempotency.</li>
+      <li>Scheduling and retention.</li>
+      <li>Metrics and dashboard.</li>
+      <li>Chaos tests.</li>
+      <li>Benchmarks.</li>
+      <li>Stretch: append-only log store and comparison.</li>
+    </ol>
+    <p class="after">Done-criteria for each are in the <a href="https://github.com/monishchaparla/go-task-queue#milestones-and-done-criteria">README</a>.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Planned project by Monish Chaparla. Implementation not started. <a href="https://github.com/monishchaparla/go-task-queue">Source and plan on GitHub</a>.</p>
+  </div>
+</footer>
+</body>
+</html>
